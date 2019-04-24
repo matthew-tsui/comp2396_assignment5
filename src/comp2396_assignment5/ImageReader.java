@@ -32,8 +32,7 @@ public class ImageReader {
 			}
 			
 			if (bimg == null) {
-				//JavaPuzzle.showError();
-				return load();	
+				return null;
 			}
 			
 			BufferedImage resizedImage = resizeImage(bimg);
@@ -41,7 +40,7 @@ public class ImageReader {
 			return resizedImage;
 		} else {
 			//JavaPuzzle.showError();
-			return load();
+			return null;
 		}
 	}
 	
@@ -50,8 +49,8 @@ public class ImageReader {
 	 * @return resized image according to specification asss
 	 */
 	private static BufferedImage resizeImage(BufferedImage image) {
-		Image tmp = image.getScaledInstance(800, 800, Image.SCALE_DEFAULT);
-		BufferedImage resizedImage = new BufferedImage(800, 800, BufferedImage.TYPE_INT_ARGB);
+		Image tmp = image.getScaledInstance(700, 700, Image.SCALE_DEFAULT);
+		BufferedImage resizedImage = new BufferedImage(700, 700, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g2d = resizedImage.createGraphics();
 	    g2d.drawImage(tmp, 0, 0, null);
 	    g2d.dispose();
