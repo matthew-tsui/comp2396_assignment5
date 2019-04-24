@@ -2,11 +2,19 @@ package comp2396_assignment5;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.io.File;
 import java.util.Scanner;
+
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
+import org.json.simple.parser.ParseException;
 
 /**
  * @author matthewtsui
@@ -51,27 +59,39 @@ public class Database {
 	 * @throws IOException if the file doesnt exist
 	 */
 	public static void load(String fname) throws IOException {
-		
-		 File file  = new File("C:\\Users\\pankaj\\Desktop\\test.txt"); 
-		 Scanner sc = new Scanner(file); 
-			  
-	     while (sc.hasNextLine()) {
-	    	 String[] line = sc.nextLine().split(",");
-	    	 Database.insert(new User(line[0], ));
-	      System.out.println(sc.nextLine()); 
-	     } 
-        //User newUser = new User((String) info.get("username"),(String)info.get("password"));
+		String data = "";
+        Path fpath = Paths.get(fname);
         
+        if (Files.exists(fpath)) {
+            data = new String(Files.readAllBytes(fpath));
+        } else {
+            Files.createFile(fpath);
+        }
+        
+        JSONParser parser = new JSONParser();
+        try {
+            JSONObject json = (JSONObject) parser.parse(data);
+            JSONArray userList = (JSONArray) json.get("user_array");
+            for (Object obj : userList) {
+                JSONObject eachEntry = (JSONObject) obj;	
+                Database.insert(new User((String) eachEntry.get("username"), (String) eachEntry.get("hash_password")));
+            }
+        } catch (ParseException e) {
+            return;
+        }
 	}
 
 	/**
 	 * @param username input
-	 * @param password input
+	 * @param password input (hashed)
 	 * @return whether the given username and password is valid
-	 */
+	 
 	public static Boolean auth(String username, String password) {
-		String hash = getHash().hash(password);
         User currentUser = userList.get(username);
-        return currentUser.getHashedPassword().equals(hash);
+        return currentUser.getHashedPassword().equals(password);
+	}*/
+	
+	public static Boolean auth(String username, String password) {
+        return true;
 	}
 }
