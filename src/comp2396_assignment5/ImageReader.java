@@ -39,7 +39,6 @@ public class ImageReader {
 			
 			return resizedImage;
 		} else {
-			//JavaPuzzle.showError();
 			return null;
 		}
 	}
