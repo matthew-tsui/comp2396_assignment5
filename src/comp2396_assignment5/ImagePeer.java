@@ -53,6 +53,10 @@ public class ImagePeer extends JPanel{
 		startLogin(usernameInput, passwordInput);
 	}
 	
+	/**
+	 * @param question to be asked 
+	 * @return the answer from user
+	 */
 	private static String newDialog(String question) {
 		JFrame frame = new JFrame("Input");
 	    String returnInput = JOptionPane.showInputDialog(
@@ -65,6 +69,9 @@ public class ImagePeer extends JPanel{
 	    return returnInput;
 	}
 	
+	/**
+	 * load layout components
+	 */
 	public void loadLayout() {
 		loadImageBlock();
 		// Frame setting
@@ -82,6 +89,9 @@ public class ImagePeer extends JPanel{
 		frame.setVisible(true);
 	}
 	
+	/**
+	 * load Image Blocks for p2p transaction
+	 */
 	public void loadImageBlock() {
 		imagePanel = new JPanel();
 		imagePanel.setSize(700,700);
@@ -102,6 +112,9 @@ public class ImagePeer extends JPanel{
 		}
 	}
 	
+	/**
+	 * establish connection to server
+	 */
 	public static void establishConnection() {
 		try {
 			clientSocket = new Socket("127.0.0.1", 9000);
@@ -118,6 +131,10 @@ public class ImagePeer extends JPanel{
 
 	}
 	
+	/**
+	 * @param username - username of the peer
+	 * @param password - password of the peer
+	 */
 	public static void startLogin(String username, String password) {
 		JSONObject json = new JSONObject();
 		json.put("Me", username);
@@ -132,6 +149,10 @@ public class ImagePeer extends JPanel{
 		writer.flush();
 	}
 	
+	/**
+	 * @author matthewtsui
+	 * Incoming transfer runnable to capturing incoming message
+	 */
 	public static class DataTransferRunnable implements Runnable {
 		public void run() {
 			String message;
