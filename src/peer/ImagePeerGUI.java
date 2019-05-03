@@ -1,4 +1,4 @@
-package comp2396_assignment5;
+package peer;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -19,6 +19,8 @@ import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
+
+import comp2396_assignment5.Component;
 
 /**
  * @author matthewtsui
@@ -44,10 +46,9 @@ public class ImagePeerGUI extends JPanel{
 	 */
 	public void loadLayout() {	
 		imagePanel = new JPanel();
-		imagePanel.setBorder(BorderFactory.createLineBorder(Color.gray));
+		//imagePanel.setBorder(BorderFactory.createLineBorder(Color.gray));
 		imagePanel.setLayout(new GridLayout(10, 10, 0, 0));
 		imagePanel.setSize(700,700);
-		imagePanel.setBackground(Color.white);
 
 		int width = 700;
 		int height = 700;
@@ -87,7 +88,7 @@ public class ImagePeerGUI extends JPanel{
 		container.add(imagePanel, BorderLayout.NORTH);
 		
 		frame.add(container);
-		frame.pack();
+		frame.setSize(700,760);
 		frame.setResizable(true);
 		frame.setVisible(true);
 	}
@@ -99,7 +100,7 @@ public class ImagePeerGUI extends JPanel{
 	public static void setBlock(BufferedImage image, int number) {	
 		Component p = Blocks.get(number);
 		p.setIcon(new ImageIcon(image));
-		updateLayout();
+		
 	}
 	
 	/**

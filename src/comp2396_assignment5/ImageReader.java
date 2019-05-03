@@ -43,6 +43,23 @@ public class ImageReader {
 		}
 	}
 	
+	public static BufferedImage loadDefault() {
+		BufferedImage bimg = null;
+		try {
+			bimg = ImageIO.read(new File("src/image.png"));
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		
+		if (bimg == null) {
+			return null;
+		}
+		
+		BufferedImage resizedImage = resizeImage(bimg);
+		
+		return resizedImage;
+	}
+	
 	/**
 	 * @param image to be resize
 	 * @return resized image according to specification asss

@@ -20,7 +20,7 @@ import javax.swing.ImageIcon;
 
 import org.json.simple.JSONObject;
 
-public class JSONSerialize {
+public class JSONUtils {
 	
 	public static BufferedImage toBufferedImage(Image img)
 	{

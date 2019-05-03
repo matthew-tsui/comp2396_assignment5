@@ -1,4 +1,4 @@
-package comp2396_assignment5;
+package auth;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -7,7 +7,7 @@ import java.security.NoSuchAlgorithmException;
  * @author matthewtsui
  * SHA1 hashing algorithm implementation
  */
-public class SHA1 extends HashOperation implements Hash {
+public class SHA1 extends HashUtils implements Hash {
 	
 	/* (non-Javadoc)
 	 * @see comp2396_assignment3_hash.Hash#hash(java.lang.String)

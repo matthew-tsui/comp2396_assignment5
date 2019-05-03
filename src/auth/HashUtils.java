@@ -1,10 +1,10 @@
-package comp2396_assignment5;
+package auth;
 
 /**
  * @author matthewtsui
  * Hash operation store general method used by hashing alogorithms
  */
-public class HashOperation {
+public class HashUtils {
 	/**
 	 * @param num byte to convert to Hex
 	 * @return Hex representation of the byte

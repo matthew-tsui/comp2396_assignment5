@@ -1,4 +1,4 @@
-package comp2396_assignment5;
+package auth;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;

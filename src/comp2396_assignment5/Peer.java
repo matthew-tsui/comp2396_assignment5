@@ -1,5 +1,6 @@
 package comp2396_assignment5;
 
+import java.io.PrintWriter;
 import java.io.Serializable;
 
 public class Peer implements Serializable{
@@ -21,8 +22,7 @@ public class Peer implements Serializable{
 	public void setPort(int port) {
 		this.port = port;
 	}
-
-
+	
 	public Peer(String ip, int port) {
 		this.ip = ip;
 		this.port = port;
@@ -31,4 +31,6 @@ public class Peer implements Serializable{
 	public void print() {
 		System.out.println("IP:"+ ip + " Port: " + port);
 	}
+	
+	
 }
