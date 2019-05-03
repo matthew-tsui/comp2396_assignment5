@@ -22,6 +22,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
@@ -118,7 +120,7 @@ public class ImagePeer extends JPanel{
 					gui.start();
 					
 					
-					//Thread Downloader = new Thread(new Downloader(in ,out));
+					//Thread Downloader = new Thread(new Downloader());
 					//Downloader.start();
 					
 					Thread Requester = new Thread(new Requester());
@@ -126,6 +128,7 @@ public class ImagePeer extends JPanel{
 					
 					System.out.println("list: " + receivedBlockList);
 					// request blocks from client
+					
 					/*
 					Random r = new Random();
 					int nextBlockNumber;
@@ -133,18 +136,19 @@ public class ImagePeer extends JPanel{
 						do {
 							nextBlockNumber = r.nextInt(100);
 						} while(receivedBlockList.contains(nextBlockNumber));
+						
+						System.out.println("Requesting block: " + nextBlockNumber);
+						
+						client.requestBlock("server", nextBlockNumber);
 						try {
-							Thread.sleep(200);
+							Thread.sleep(50);
 						} catch (InterruptedException e) {
 							// TODO Auto-generated catch block
 							e.printStackTrace();
 						}
-						System.out.println("Requesting block: " + nextBlockNumber);
-						
-						client.requestBlock("server", nextBlockNumber);
-					}
+					}*/
 					
-					*/
+					
 					break;
 				case "GET_IMG_BLOCK":
 					int blockNumber = (int) (long) json.get("Data_block_number");
@@ -153,11 +157,12 @@ public class ImagePeer extends JPanel{
 					System.out.println("Received block " + blockNumber + " from " + username);
 					
 					// Mark block as received
-					synchronized(receivedBlockList) {
+					//synchronized(receivedBlockList) {
 						receivedBlockList.add(blockNumber);
-					}
-					ImagePeerGUI.updateLayout();
+					//}
+					//ImagePeerGUI.updateLayout();
 					System.out.println("list: " + receivedBlockList.size());
+					System.out.println("list content: " + receivedBlockList);
 					break;
 				case "UPDATE_IMG_BLOCK":
 					int blockNumber1 = (int) (long) json.get("Data_block_number1");
@@ -170,10 +175,12 @@ public class ImagePeer extends JPanel{
 					ImagePeerGUI.setBlock(JSONUtils.base64StringToImg((String) content2), blockNumber2);
 					System.out.println("Client updated block number" + blockNumber2);
 					
-					ImagePeerGUI.updateLayout();
+					//ImagePeerGUI.updateLayout();
 			}
 		
 		}
+		
+		
 		in.close();
 	    out.close();
 	}
@@ -270,15 +277,22 @@ public class ImagePeer extends JPanel{
 						case "GET_IMG_BLOCK":
 							int blockNumber = (int) (long) json.get("Data_block_number");
 							String content = (String) json.get("Data_content");
-							System.out.println("Received block " + blockNumber + " from " + username);
 							ImagePeerGUI.setBlock(JSONUtils.base64StringToImg((String) content), blockNumber);
+							System.out.println("Received block " + blockNumber + " from " + username);
 							
 							// Mark block as received
-							synchronized(receivedBlockList) {
+							//synchronized(receivedBlockList) {
 								receivedBlockList.add(blockNumber);
+							//}
+							//ImagePeerGUI.updateLayout();
+							try {
+								Thread.sleep(50);
+							} catch (InterruptedException e) {
+								// TODO Auto-generated catch block
+								e.printStackTrace();
 							}
-							
 							System.out.println("list: " + receivedBlockList.size());
+							System.out.println("list content: " + receivedBlockList);
 							break;
 					}
 
@@ -300,15 +314,19 @@ public class ImagePeer extends JPanel{
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			Random r = new Random();
+			
+			// Generate a list with 0 - 99
+			List queue = new ArrayList();
+			for (int i = 0; i < 100 ;i++) {
+				queue.add(i);
+			}
+			
+			// Shuffle it make the retrieval of blocks random
+			Collections.shuffle(queue);
+		
 			int nextBlockNumber;
 			for (int i = 0; i < 100 ;i++) {
-				do {
-					nextBlockNumber = r.nextInt(100);
-				} while(receivedBlockList.contains(nextBlockNumber));
-				System.out.println("Requesting block: " + i);
-				
-				client.requestBlock("server", i);
+				client.requestBlock("server", (int) queue.get(i));
 			}
 		}
 		

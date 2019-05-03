@@ -206,7 +206,6 @@ public class ImageServer extends Peer {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
 							}
-						
 							break;
 						
 						case "LOGOUT":
@@ -253,6 +252,7 @@ public class ImageServer extends Peer {
 				respond1.put("Data_image_name", null);
 				respond1.put("Data_block_number1", source);
 				respond1.put("Data_block_number2", dest);
+				
 				Image i = Blocks.get(source).getImage();
 				BufferedImage bi = JSONUtils.toBufferedImage(i);
 				respond1.put("Data_content1", JSONUtils.imgToBase64String(bi, "png"));	
@@ -382,14 +382,18 @@ public class ImageServer extends Peer {
 							// do nothing
 						}  else{
 							System.out.println("source: " + source.getClientProperty("order") + "dest: " + dest.getClientProperty("order"));
+							
+							int s1 = Blocks.indexOf(source);
+							int s2 = Blocks.indexOf(dest);
+							Collections.swap(Blocks, Blocks.indexOf(source), Blocks.indexOf(dest));
+							updateLayout();
+							
 							try {
-								updateBlockAfterSwap((int) source.getClientProperty("order"), (int) dest.getClientProperty("order"));
+								updateBlockAfterSwap(s1, s2);
 							} catch (IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-							Collections.swap(Blocks, Blocks.indexOf(source), Blocks.indexOf(dest));
-							updateLayout();
 							//checkSolution();
 						}
 						
