@@ -15,18 +15,17 @@ import javax.swing.TransferHandler;
  * @author matthewtsui
  * component class represents each small piece in the puzzle
  */
-public class Component extends JLabel{
+public class Block extends JLabel{
 	/** Constructor
 	 * @param i x-coordinate of piece
 	 * @param j y-coordinate of piece
 	 * @param o order number for solution check
 	 */
 	Image image;
-	public Component(int i, int j, int o){
+	public Block(int i, int j, int o){
 		//super(i + "," + j + "(" + o + "");
         setSize(70, 70);
         setBorder(BorderFactory.createLineBorder(Color.gray));
-        setTransferHandler(new TransferHandler("text"));
         putClientProperty("order", o);  
     }
 	

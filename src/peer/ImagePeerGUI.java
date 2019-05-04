@@ -20,7 +20,7 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 
-import comp2396_assignment5.Component;
+import comp2396_assignment5.Block;
 
 /**
  * @author matthewtsui
@@ -30,7 +30,7 @@ public class ImagePeerGUI extends JPanel{
 	private static JFrame frame;
 	private static JPanel container;
 	private static JPanel imagePanel;
-	private static ArrayList<Component> Blocks = new ArrayList();
+	private static ArrayList<Block> Blocks = new ArrayList();
 	private static Integer clientID;
 	
 	/**
@@ -57,7 +57,7 @@ public class ImagePeerGUI extends JPanel{
 		int blockNumber = 0;
 		for(int i = 0; i< 10; i++) {
 			for(int j = 0; j <10; j++) {
-				Component block = new Component(i,j, blockNumber);
+				Block block = new Block(i,j, blockNumber);
 				blockNumber++;
 				Blocks.add(block);
 			}
@@ -65,7 +65,7 @@ public class ImagePeerGUI extends JPanel{
 		 
 		 // add Jlabel to puzzle
 		 for(int i = 0; i < 100; i++) {
-			 Component p = Blocks.get(i);
+			 Block p = Blocks.get(i);
 			 imagePanel.add(p);
 		 }
 
@@ -98,9 +98,37 @@ public class ImagePeerGUI extends JPanel{
 	 * @param number of block to be inserted to view
 	 */
 	public static void setBlock(BufferedImage image, int number) {	
-		Component p = Blocks.get(number);
+		Block p = Blocks.get(number);
 		p.setIcon(new ImageIcon(image));
+		p.setImage(image);
 		
+	}
+	
+	public static ArrayList<Block> getBlocks(){
+		return Blocks;
+	}
+	
+	public void setImage(BufferedImage myimage) {
+		int blockNumber = 0;
+		for(int i = 0; i< 10; i++) {
+			for(int j = 0; j <10; j++) {
+				Image image = createImage(new FilteredImageSource(myimage.getSource(),
+						new CropImageFilter(j * 700 / 10, i * 700 / 10,
+								(700/ 10), 700 / 10)));	
+				Block block = Blocks.get(blockNumber);
+				
+				// set block bg
+				block.setIcon(new ImageIcon(image));
+				
+				block.setImage(image);
+				
+				// add the counter
+				blockNumber++;
+				
+			}
+		}
+		
+		updateLayout();
 	}
 	
 	/**
@@ -108,7 +136,7 @@ public class ImagePeerGUI extends JPanel{
 	 */
 	public static void updateLayout() {
 		imagePanel.removeAll();
-		for(Component p : Blocks) {
+		for(Block p : Blocks) {
 			imagePanel.add(p);
 		}
 		imagePanel.revalidate();

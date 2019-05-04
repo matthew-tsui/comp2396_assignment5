@@ -42,7 +42,7 @@ import org.json.simple.parser.ParseException;
 
 import auth.Database;
 import auth.SHA1;
-import comp2396_assignment5.Component;
+import comp2396_assignment5.Block;
 import comp2396_assignment5.ImageReader;
 import comp2396_assignment5.JSONUtils;
 import comp2396_assignment5.Peer;
@@ -55,7 +55,7 @@ public class ImageServer extends Peer {
 	private static ServerSocket serverSocket;
 	private static PeerList peerList = new PeerList();
 	private static ArrayList<PrintWriter> peerWriters = new ArrayList();
-	private static ArrayList<Component> Blocks = new ArrayList();
+	private static ArrayList<Block> Blocks = new ArrayList();
 	
 	//Views
 	private static JFrame frame;
@@ -64,8 +64,8 @@ public class ImageServer extends Peer {
 	private static JButton btnLoadAnother;
 	
 	// Drag and drop
-	private Component source = null;
-	private Component dest = null;
+	private Block source = null;
+	private Block dest = null;
 	
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
@@ -112,12 +112,12 @@ public class ImageServer extends Peer {
 				// Add writer to list of peers
 				System.out.println("Allowing new thread to client" + s);
 				
-				Peer newPeer = new Peer(s.getInetAddress().getHostAddress().toString(), s.getPort());
+				Peer newPeer = new Peer(s.getInetAddress().getHostAddress().toString(), s.getLocalPort());
 				newPeer.print();
 				peerList.addPeer(newPeer);
 				peerWriters.add(writer);
 				
-				Thread newClient = new Thread(new ClientRunnable(s, reader , writer, s.getPort()));
+				Thread newClient = new Thread(new ClientRunnable(s, reader , writer, s.getLocalPort()));
 				newClient.start();
 				
 			}
@@ -149,7 +149,7 @@ public class ImageServer extends Peer {
 			try {
 				// validate the user
 				while ( (message=reader.readLine()) != null ) {
-					System.out.println("Server received: " + message);
+					//System.out.println("Server received: " + message);
 					JSONParser parser = new JSONParser();
 					JSONObject json = (JSONObject) parser.parse(message);
 					
@@ -182,7 +182,7 @@ public class ImageServer extends Peer {
 							respond.put("Data_image_name", null);
 							respond.put("Data_block_number", null);
 							respond.put("Data_content", null);
-							respond.put("Peer_list", peerList.serialize());
+							respond.put("Peer_list", PeerList.serialize(peerList));
 							
 							break;
 						case "REQUEST_IMG_BLOCK":
@@ -201,7 +201,7 @@ public class ImageServer extends Peer {
 							respond.put("Data_content", JSONUtils.imgToBase64String(bi, "png"));	
 							
 							try {
-								respond.put("Peer_list:", peerList.serialize());
+								respond.put("Peer_list:", PeerList.serialize(peerList));
 							} catch (IOException e) {
 								// TODO Auto-generated catch block
 								e.printStackTrace();
@@ -218,7 +218,7 @@ public class ImageServer extends Peer {
 					
 					writer.println(respond.toString());
 					writer.flush();
-					System.out.println("Server sent: " + respond.toString());
+					//System.out.println("Server sent: " + respond.toString());
 				
 				}
 				
@@ -233,16 +233,61 @@ public class ImageServer extends Peer {
 		
 	}
 	
+	
+	
 	public class GUIThread extends JPanel implements Runnable{
+		int WIDTH = 700;
+		int HEIGHT = 700;
 		
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
-			loadImage();
+			
+			// load image to image panel
+			displayImage = ImageReader.loadDefault();
+			if(displayImage == null) {
+				System.exit(0);
+			}
+			
 			loadLayout();
 		}
 		
-		public void updateBlockAfterSwap(int source, int dest) throws IOException {
+		
+		/** 
+		 * When the source image in change, update all clients
+		 */
+		public void broadcastSourceImageUpdate() {
+			for(PrintWriter w: peerWriters) {
+				JSONObject respond1 = new JSONObject();
+				respond1.put("Me", "Teacher");
+				respond1.put("You", "");
+				respond1.put("clientID", null);
+				respond1.put("Command", "UPDATE_SOURCE_IMG");
+				
+				Image i = displayImage;
+				BufferedImage bi = JSONUtils.toBufferedImage(i);
+				respond1.put("Data_content",  JSONUtils.imgToBase64String(bi, "png"));
+				
+				try {
+					respond1.put("Peer_list:", PeerList.serialize(peerList));
+				} catch (IOException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+				}
+				
+				w.println(respond1.toString());
+				w.flush();
+				
+				System.out.println("Server sent update img source: " + respond1.toString());
+			}
+		}
+		
+		/** This method broadcast the block update after user swap to block
+		 * @param source of image block
+		 * @param dest of image block
+		 * @throws IOException
+		 */
+		public void broadcastImageBlockUpdateAfterSwap(int source, int dest) throws IOException {
 			for(PrintWriter w: peerWriters) {
 				JSONObject respond1 = new JSONObject();
 				respond1.put("Me", "Teacher");
@@ -260,7 +305,7 @@ public class ImageServer extends Peer {
 				Image i2 = Blocks.get(dest).getImage();
 				BufferedImage bi2 = JSONUtils.toBufferedImage(i2);	
 				respond1.put("Data_content2", JSONUtils.imgToBase64String(bi2, "png"));	
-				respond1.put("Peer_list", peerList.serialize());
+				respond1.put("Peer_list",PeerList.serialize(peerList));
 				
 				w.println(respond1.toString());
 				w.flush();
@@ -268,14 +313,32 @@ public class ImageServer extends Peer {
 				System.out.println("Server sent update img block: " + respond1.toString());
 			}
 		}
+		
+		
 		/**
-		 * load another image
+		 * reload source image to block after use choose a new image
 		 */
-		public void loadImage() {
-			displayImage = ImageReader.loadDefault();
-			if(displayImage == null) {
-				System.exit(0);
+		public void reloadDisplayImage() {
+			int blockNumber = 0;
+			for(int i = 0; i< 10; i++) {
+				for(int j = 0; j <10; j++) {
+					Image image = createImage(new FilteredImageSource(displayImage.getSource(),
+							new CropImageFilter(j * WIDTH / 10, i * HEIGHT / 10,
+									(WIDTH / 10), HEIGHT / 10)));	
+					Block block = Blocks.get(blockNumber);
+					
+					// set block bg
+					block.setIcon(new ImageIcon(image));
+					
+					block.setImage(image);
+					updateLayout();
+					// add the counter
+					blockNumber++;
+					
+				}
 			}
+			
+			
 		}
 		
 		/**
@@ -290,31 +353,31 @@ public class ImageServer extends Peer {
 				public void actionPerformed(ActionEvent e) {
 					// TODO Auto-generated method stub
 					BufferedImage newImage = ImageReader.load();
-					if(displayImage != null) {
+					if(newImage != null) {
 						displayImage = newImage;
+						reloadDisplayImage();
+						broadcastSourceImageUpdate();
 					}
 				}
 			});
 				
 			
 			imagePanel = new JPanel();
-			imagePanel .setBorder(BorderFactory.createLineBorder(Color.gray));
-			imagePanel .setLayout(new GridLayout(10, 10, 0, 0));
-			imagePanel .setSize(700,700);
-			imagePanel .setBackground(Color.white);
+			//imagePanel.setBorder(BorderFactory.createLineBorder(Color.gray));
+			imagePanel.setLayout(new GridLayout(10, 10, 0, 0));
+			imagePanel.setSize(700,700);
+			imagePanel.setBackground(null);
 
-			int width = 700;
-			int height = 700;
 
 			//initalize Jlabel
 			int blockNumber = 0;
 			for(int i = 0; i< 10; i++) {
 				for(int j = 0; j <10; j++) {
 					Image image = createImage(new FilteredImageSource(displayImage.getSource(),
-							new CropImageFilter(j * width / 10, i * height / 10,
-									(width / 10), height / 10)));	
+							new CropImageFilter(j * WIDTH / 10, i * HEIGHT / 10,
+									(WIDTH / 10), HEIGHT / 10)));	
 					// create new block
-					Component block = new Component(i,j, blockNumber);
+					Block block = new Block(i,j, blockNumber);
 					
 					// set block bg
 					block.setIcon(new ImageIcon(image));
@@ -335,7 +398,7 @@ public class ImageServer extends Peer {
 			 
 			 //add Jlabel to puzzle
 			 for(int i = 0; i < 100; i++) {
-				 Component p = Blocks.get(i);
+				 Block p = Blocks.get(i);
 				 imagePanel.add(p);
 			 }
 
@@ -352,7 +415,7 @@ public class ImageServer extends Peer {
 			
 			frame.add(container);
 			frame.pack();
-			frame.setResizable(true);
+			frame.setResizable(false);
 			frame.setVisible(true);
 		}
 		
@@ -365,7 +428,7 @@ public class ImageServer extends Peer {
 				 * @see java.awt.event.MouseAdapter#mousePressed(java.awt.event.MouseEvent)
 				 */
 				public void mousePressed(MouseEvent e) {
-					source = (Component)e.getSource();
+					source = (Block)e.getSource();
 					//if(isCorrectPosition(source)) {
 					//	textArea.append("Image block in correct position!\n");
 					//	source = null;
@@ -383,13 +446,17 @@ public class ImageServer extends Peer {
 						}  else{
 							System.out.println("source: " + source.getClientProperty("order") + "dest: " + dest.getClientProperty("order"));
 							
+							// Record source and dest
 							int s1 = Blocks.indexOf(source);
 							int s2 = Blocks.indexOf(dest);
 							Collections.swap(Blocks, Blocks.indexOf(source), Blocks.indexOf(dest));
+							
+							// Update layout
 							updateLayout();
 							
 							try {
-								updateBlockAfterSwap(s1, s2);
+								// Send the current block of s1 and s2 to client
+								broadcastImageBlockUpdateAfterSwap(s1, s2);
 							} catch (IOException e1) {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
@@ -404,7 +471,7 @@ public class ImageServer extends Peer {
 				 * @see java.awt.event.MouseAdapter#mouseEntered(java.awt.event.MouseEvent)
 				 */
 				public void mouseEntered(MouseEvent e) {
-					dest = (Component)e.getSource();
+					dest = (Block)e.getSource();
 					//System.out.println("des: " + dest.getClientProperty("order"));
 				}
 				
@@ -415,7 +482,7 @@ public class ImageServer extends Peer {
 		 */
 		public void updateLayout() {
 			imagePanel.removeAll();
-			for(Component p : Blocks) {
+			for(Block p : Blocks) {
 				imagePanel.add(p);
 			}
 			imagePanel.revalidate();

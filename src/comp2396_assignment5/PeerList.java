@@ -32,6 +32,14 @@ public class PeerList implements Serializable{
 		peerList.remove(peer);
 	} 
 	
+	synchronized public int size(){
+		return peerList.size();
+	} 
+	
+	synchronized public Peer get(int i){
+		return peerList.get(i);
+	} 
+	
 	public int getPeerByPort(int port) {
 		int index = 0;
 		for(Peer p: peerList) {
@@ -45,7 +53,7 @@ public class PeerList implements Serializable{
 	
 	public static PeerList deserialize(String s) throws IOException ,
     ClassNotFoundException {
-		byte [] data = Base64.getDecoder().decode( s );
+		byte [] data = Base64.getDecoder().decode(s);
 		ObjectInputStream ois = new ObjectInputStream( 
 		new ByteArrayInputStream(  data ) );
 		Object o  = ois.readObject();
@@ -54,10 +62,10 @@ public class PeerList implements Serializable{
 	}
 	
 	/** Write the object to a Base64 string. */
-	public String serialize() throws IOException {
+	public static String serialize(Serializable o) throws IOException {
 		ByteArrayOutputStream baos = new ByteArrayOutputStream();
 		ObjectOutputStream oos = new ObjectOutputStream( baos );
-		oos.writeObject(this);
+		oos.writeObject(o);
 		oos.close();
 		return Base64.getEncoder().encodeToString(baos.toByteArray()); 
 	}
