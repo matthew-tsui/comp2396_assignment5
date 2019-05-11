@@ -43,6 +43,9 @@ public class ImageReader {
 		}
 	}
 	
+	/**
+	 * @return the default resized image (for debug purpose)
+	 */
 	public static BufferedImage loadDefault() {
 		BufferedImage bimg = null;
 		try {

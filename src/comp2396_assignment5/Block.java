@@ -13,7 +13,7 @@ import javax.swing.TransferHandler;
 
 /**
  * @author matthewtsui
- * component class represents each small piece in the puzzle
+ * block class represents each sub-image in the program
  */
 public class Block extends JLabel{
 	/** Constructor
@@ -29,10 +29,16 @@ public class Block extends JLabel{
         putClientProperty("order", o);  
     }
 	
+	/**
+	 * @return image of the current block
+	 */
 	public Image getImage() {
 		return image;
 	}
 	
+	/**
+	 * @param img for the block
+	 */
 	public void setImage(Image img) {
 		image  = img;
 	}

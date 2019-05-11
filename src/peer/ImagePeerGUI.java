@@ -78,7 +78,7 @@ public class ImagePeerGUI extends JPanel{
             @Override
             public void windowClosing(WindowEvent e)
             {
-                //ImagePeer.sendCloseRequest(clientID);
+                ImagePeer.logout();
                 e.getWindow().dispose();
             }
         });
@@ -104,10 +104,16 @@ public class ImagePeerGUI extends JPanel{
 		
 	}
 	
+	/**
+	 * @return blocks list
+	 */
 	public static ArrayList<Block> getBlocks(){
 		return Blocks;
 	}
 	
+	/**
+	 * @param myimage to be set to the GUI
+	 */
 	public void setImage(BufferedImage myimage) {
 		int blockNumber = 0;
 		for(int i = 0; i< 10; i++) {

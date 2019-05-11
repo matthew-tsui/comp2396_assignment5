@@ -49,8 +49,11 @@ import server.ImageServer.ClientRunnable;
 
 
 
+/**
+ * @author Matthew
+ * Image peer for downloading image block from server
+ */
 public class ImagePeer extends JPanel{
-	private static String serverAddressInput;
 	private static BufferedReader in;
 	private static PrintWriter out;
 	private static String clientName;
@@ -68,29 +71,43 @@ public class ImagePeer extends JPanel{
 	public static void main(String[] args) throws ClassNotFoundException, IOException, ParseException {
 		// TODO Auto-generated method stub
 		Database.setHash(new SHA1());
-		serverAddressInput = newDialog("Connect to server:");
-		//String usernameInput = newDialog("Username:");
-		//String passwordInput = newDialog("Password:");
-		String usernameInput = "cbchan";
-		String passwordInput = "HelloWorld0";
+		String serverAddressInput = newDialog("Connect to server:");
 		
+		if (serverAddressInput.length() == 0) {
+			JOptionPane.showMessageDialog(new JFrame(), "Empty server address", "Message", JOptionPane.INFORMATION_MESSAGE);
+            System.exit(0);
+		}
+			
+		String usernameInput = newDialog("Username:");
+		if (usernameInput.length() == 0) {
+			JOptionPane.showMessageDialog(new JFrame(), "Empty username", "Message", JOptionPane.INFORMATION_MESSAGE);
+			System.exit(0);
+		}
+			
+		String passwordInput = newDialog("Password:");
+		if (passwordInput.length() == 0) {
+			JOptionPane.showMessageDialog(new JFrame(), "Empty password", "Message", JOptionPane.INFORMATION_MESSAGE);
+            System.exit(0);
+		}
+			
+		
+		// for debug only
 		String usernameInput1 = "cjli";
 		String passwordInput1 = "2396BComp";
 		
 		client = new ImagePeer();
-		client.establishConnection();
+		client.establishConnection(serverAddressInput);
 		client.startLogin(usernameInput, passwordInput);
-		client.maintainConnection2();
-		
+		client.maintainConnection();
 		
 	}
 	
 	/**
 	 * establish connection to server
 	 */
-	public void establishConnection() {		
+	public void establishConnection(String address) {		
 		try {
-			Socket clientSocket = new Socket("127.0.0.1", 9000);
+			Socket clientSocket = new Socket(address, 9000);
 			InputStreamReader sr = new InputStreamReader(clientSocket.getInputStream());
 			in = new BufferedReader(sr);
 			out = new PrintWriter(clientSocket.getOutputStream());
@@ -101,11 +118,19 @@ public class ImagePeer extends JPanel{
 			
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
+			JOptionPane.showMessageDialog(new JFrame(), "Invalid server address", "Message", JOptionPane.INFORMATION_MESSAGE);
+			System.exit(0);
 			e.printStackTrace();
 		} 
 
 	}
-	public void maintainConnection2() throws IOException, ParseException, ClassNotFoundException {
+	
+	/** This method keep listen from server for source image update and swap
+	 * @throws IOException
+	 * @throws ParseException
+	 * @throws ClassNotFoundException
+	 */
+	public void maintainConnection() throws IOException, ParseException, ClassNotFoundException {
 		String message;
 		while ( (message=in.readLine()) != null ) {
 			//System.out.println("client received: " + message);
@@ -117,7 +142,7 @@ public class ImagePeer extends JPanel{
 			String target = (String) json.get("You");
 			String peerList = (String) json.get("Peer_list");
 			
-			if(!target.equals("peer") && peerList != null) {
+			if(!source.equals("peer") && peerList != null) {
 				setPeerList(PeerList.deserialize(peerList));
 			}
 			switch (command) {
@@ -131,41 +156,21 @@ public class ImagePeer extends JPanel{
 					Thread gui = new Thread(new GUIThread());
 					gui.start();
 					
-					
-					//Thread Downloader = new Thread(new Downloader());
-					//Downloader.start();
-					
+					// start request block from peers/server
 					Thread Requester = new Thread(new Requester());
 					Requester.start();
 					
-					// request blocks from client
-					
-					/*
-					Random r = new Random();
-					int nextBlockNumber;
-					for (int i = 0; i < 100 ;i++) {
-						do {
-							nextBlockNumber = r.nextInt(100);
-						} while(receivedBlockList.contains(nextBlockNumber));
-						
-						System.out.println("Requesting block: " + nextBlockNumber);
-						
-						client.requestBlock("server", nextBlockNumber);
-						try {
-							Thread.sleep(50);
-						} catch (InterruptedException e) {
-							// TODO Auto-generated catch block
-							e.printStackTrace();
-						}
-					}*/
-					
-					
 					break;
+				case "LOGIN_FAIL":
+					JOptionPane.showMessageDialog(new JFrame(), "Login Fail", "Message", JOptionPane.INFORMATION_MESSAGE);
+	                System.exit(0);
+	                break;
+	                
 				case "GET_IMG_BLOCK":
 					int blockNumber = (int) (long) json.get("Data_block_number");
 					String content = (String) json.get("Data_content");
 					ImagePeerGUI.setBlock(JSONUtils.base64StringToImg((String) content), blockNumber);
-					System.out.println("Received block " + blockNumber + " from " + source);
+					System.out.println("Received block " + blockNumber);
 					
 					// Mark block as received
 					//synchronized(receivedBlockList) {
@@ -192,6 +197,9 @@ public class ImagePeer extends JPanel{
 					String content3 = (String) json.get("Data_content");
 					GUI.setImage(JSONUtils.base64StringToImg((String) content3));
 					break;
+				case "UPDATE_PEERLIST":
+					setPeerList(PeerList.deserialize(peerList));
+					break;
 				
 			}
 		
@@ -204,8 +212,11 @@ public class ImagePeer extends JPanel{
 	
 
 	
+	/**
+	 * send logout request to server
+	 */
 	@SuppressWarnings("unchecked")
-	public void sendLogoutRequest() {
+	public static void logout() {
 		JSONObject json = new JSONObject();
 		json.put("Me", null);
 		json.put("You", "Teacher");
@@ -220,7 +231,7 @@ public class ImagePeer extends JPanel{
 		out.flush();
 	}
 	
-	/**
+	/** login to server
 	 * @param username - username of the peer
 	 * @param password - password of the peer
 	 */
@@ -240,9 +251,15 @@ public class ImagePeer extends JPanel{
 		out.flush();
 	}
 	
+	/**
+	 * @param target to be requested
+	 * @param blockNum to be requested
+	 * @param ip - target ip
+	 * @param port - target port
+	 */
 	@SuppressWarnings("unchecked")
 	public void requestBlock(String target, int blockNum, String ip, int port) {
-		port = 9001;
+
 		JSONObject json = new JSONObject();
 		json.put("Me", getClientName());
 		json.put("You", target);
@@ -259,7 +276,7 @@ public class ImagePeer extends JPanel{
 			System.out.println("Server - Client sent block request to "+ target + ":  " + json.toString());
 		} else {
 			try {
-				Socket clientSocket = new Socket(ip, port);
+				Socket clientSocket = new Socket(ip, 9001);
 				InputStreamReader sr;
 				sr = new InputStreamReader(clientSocket.getInputStream());
 				BufferedReader peerIn = new BufferedReader(sr);
@@ -279,6 +296,10 @@ public class ImagePeer extends JPanel{
 
 	}
 	
+	/**
+	 * @author Matthew
+	 * GUI thread to start GUI for image peer
+	 */
 	public static class GUIThread implements Runnable{
 
 		@Override
@@ -289,58 +310,16 @@ public class ImagePeer extends JPanel{
 		
 	}
 	
-	/*public static class Downloader implements Runnable{
-		@Override
-		public void run() {
-			// TODO Auto-generated method stub
-			try {
-				String message;
-				while ((message=in.readLine()) != null ) {
-					message = in.readLine();
-					JSONParser parser = new JSONParser();
-					JSONObject json = (JSONObject) parser.parse(message);
-					
-					String command = (String) json.get("Command");
-					String username = (String) json.get("Me");
-					
-					switch(command) {
-						case "GET_IMG_BLOCK":
-							int blockNumber = (int) (long) json.get("Data_block_number");
-							String content = (String) json.get("Data_content");
-							ImagePeerGUI.setBlock(JSONUtils.base64StringToImg((String) content), blockNumber);
-							System.out.println("Received block " + blockNumber + " from " + username);
-							
-							// Mark block as received
-							//synchronized(receivedBlockList) {
-								receivedBlockList.add(blockNumber);
-							//}
-							//ImagePeerGUI.updateLayout();
-							try {
-								Thread.sleep(50);
-							} catch (InterruptedException e) {
-								// TODO Auto-generated catch block
-								e.printStackTrace();
-							}
-							//System.out.println("list: " + receivedBlockList.size());
-							//System.out.println("list content: " + receivedBlockList);
-							break;
-					}
-
-				}
-			} catch (IOException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			} catch (ParseException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
-			}
-			
-		}
-		
-	}*/
 	
+	/**
+	 * @author Matthew
+	 * This method handle the request to server or peers
+	 */
 	public static class Requester implements Runnable{
 		
+		/**
+		 * this runnable request blocks from either server or peers
+		 */
 		@Override
 		public void run() {
 			// TODO Auto-generated method stub
@@ -364,8 +343,8 @@ public class ImagePeer extends JPanel{
 			for (int i = 0; i < 100 ;i++) {
 				client.requestBlock("server", (int) queue.get(i), "0" , 0);
 				
-				// if there is only server in the peerlist, get the image from it
-				if(p.size() > 1) {
+				// if there are more then two nodes in the peerlist, which means the third node can get data from server and first peer
+				if(p.size() > 2) {
 					int nextPeer = r.nextInt(p.size());
 					int t = r.nextInt(100);
 					
@@ -390,6 +369,10 @@ public class ImagePeer extends JPanel{
 		
 	}
 	
+	/**
+	 * @author Matthew
+	 * This class turn peer to upload server to handle the request from peers
+	 */
 	public static class UploadServer implements Runnable{
 		ServerSocket ss=null;
 		
@@ -443,19 +426,27 @@ public class ImagePeer extends JPanel{
 		
 		/**
 		 * @author Matthew
-		 * This class construct response to peer connection
+		 * This class construct response to peer connection(actually send the response to peers)
 		 */
 		public static class Uploader implements Runnable {
 			Socket client;
 			BufferedReader reader;
 			PrintWriter writer;
 			
+			/**
+			 * @param client socket
+			 * @param in reader from client
+			 * @param out printwriter to client
+			 */
 			public Uploader(Socket client, BufferedReader in, PrintWriter out) {
 				this.client = client;
 				this.reader = in;
 				this.writer = out;
 			}
 			
+			/**
+			 * the runnable keep listening from peer and respond
+			 */
 			@Override
 			public void run() {
 				// TODO Auto-generated method stub
@@ -518,31 +509,52 @@ public class ImagePeer extends JPanel{
 		}
 		
 	}
-
+	
+	/**
+	 * @return current client object
+	 */
 	public static ImagePeer getClient() {
 		return client;
 	}
 	
+	/**
+	 * @param id to be set as current client ID
+	 */
 	public void setClientID(int id) {
 		clientID = id;
 	}
 	
-	public int getClientID() {
+	/**
+	 * @return current client ID
+	 */
+	public static int getClientID() {
 		return clientID;
 	}
 	
+	/** 
+	 * @param name to be set as current client name
+	 */
 	public void setClientName(String name) {
 		clientName = name;
 	}
 	
+	/**
+	 * @return current client name
+	 */
 	public static String getClientName() {
 		return clientName;
 	}
 	
+	/**
+	 * @return list of peers
+	 */
 	public static PeerList getPeerList() {
 		return peerList;
 	}
 	
+	/**
+	 * @param p list of peers to be set
+	 */
 	public static void setPeerList(PeerList p) {
 		peerList = p;
 	}

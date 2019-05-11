@@ -17,6 +17,10 @@ public class User{
 	private String lastLogin;
 	private Boolean accountLocked = false;
 	
+	/**
+	 * @param username to be set
+	 * @param password to be set
+	 */
 	public User(String username, String password) {
 		this.username = username;
 		this.hashedPassword = password;

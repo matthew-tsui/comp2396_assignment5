@@ -20,8 +20,16 @@ import javax.swing.ImageIcon;
 
 import org.json.simple.JSONObject;
 
+/**
+ * @author Matthew
+ * This class store the methods for JSON serialize and deserialize
+ */
 public class JSONUtils {
 	
+	/**
+	 * @param img - source image
+	 * @return image being transformed to bufferedImage
+	 */
 	public static BufferedImage toBufferedImage(Image img)
 	{
 	    if (img instanceof BufferedImage)
@@ -41,6 +49,11 @@ public class JSONUtils {
 	    return bimage;
 	}
 	
+	/**
+	 * @param img to be changed
+	 * @param formatName to be changed
+	 * @return string representing the image
+	 */
 	public static String imgToBase64String(final RenderedImage img, final String formatName) {
 		 final ByteArrayOutputStream os = new ByteArrayOutputStream();
 		 try {
@@ -51,6 +64,10 @@ public class JSONUtils {
 		 }
 		}
 	
+	/**
+	 * @param base64String to be changed to image
+	 * @return image constructed from string
+	 */
 	public static BufferedImage base64StringToImg(final String base64String) {
 	 try {
 	 return ImageIO.read(new ByteArrayInputStream(Base64.getDecoder().decode(base64String)));

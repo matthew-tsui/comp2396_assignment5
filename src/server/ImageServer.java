@@ -50,6 +50,10 @@ import comp2396_assignment5.PeerList;
 import peer.ImagePeerGUI;
 
 
+/**
+ * @author Matthew
+ * ImageServer class for peer connection
+ */
 public class ImageServer extends Peer {
 	private static BufferedImage displayImage;
 	private static ServerSocket serverSocket;
@@ -67,12 +71,19 @@ public class ImageServer extends Peer {
 	private Block source = null;
 	private Block dest = null;
 	
+	/**
+	 * @param args
+	 * @throws IOException
+	 */
 	public static void main(String[] args) throws IOException {
 		// TODO Auto-generated method stub
 		ImageServer server = new ImageServer();
 		server.openConnection();
 	}
 	
+	/** Constructor loading user.txt and db configure
+	 * @throws IOException
+	 */
 	public ImageServer() throws IOException {
 		super("127.0.0.1", -1);
 		// initalize database
@@ -83,11 +94,17 @@ public class ImageServer extends Peer {
 		GUI.start();
 	}
 	
+	/**
+	 * @return list of peers
+	 */
 	public static PeerList getPeerList() {
 		return peerList;
 	}
 	
 	
+	/**
+	 * open connection for incoming peers
+	 */
 	public void openConnection() {
 		try {
 			// Define a new socket
@@ -112,7 +129,7 @@ public class ImageServer extends Peer {
 				// Add writer to list of peers
 				System.out.println("Allowing new thread to client" + s);
 				
-				Peer newPeer = new Peer(s.getInetAddress().getHostAddress().toString(), s.getLocalPort());
+				Peer newPeer = new Peer(s.getInetAddress().getHostAddress().toString(), s.getPort());
 				newPeer.print();
 				peerList.addPeer(newPeer);
 				peerWriters.add(writer);
@@ -129,11 +146,23 @@ public class ImageServer extends Peer {
 	
 	
 	
+	/**
+	 * @author Matthew
+	 * This class handle the action of each incoming peer
+	 */
 	public static class ClientRunnable implements Runnable{
 		Socket client;
 		BufferedReader reader;
 		PrintWriter writer;
 		int clientID;
+		
+		/**
+		 * @param client socket
+		 * @param in - reader for client
+		 * @param out - printwriter for client
+		 * @param clientID - client ID for peer list control
+		 * @throws IOException
+		 */
 		public ClientRunnable(Socket client, BufferedReader in, PrintWriter out, int clientID) throws IOException {
 			this.client = client;
 			this.reader = in;
@@ -141,6 +170,9 @@ public class ImageServer extends Peer {
 			this.clientID = clientID;
 		}
 		
+		/**
+		 * This class keep listen peer connection
+		 */
 		@SuppressWarnings("unchecked")
 		@Override
 		public void run() {
@@ -211,6 +243,21 @@ public class ImageServer extends Peer {
 						case "LOGOUT":
 							System.out.println("Server received logout request: " + message);
 							getPeerList().removePeer(peerList.getPeerByPort(clientID));
+							for(PrintWriter w: peerWriters) {
+								JSONObject respond1 = new JSONObject();
+								respond.put("Me", "Teacher");
+								respond.put("You", "");
+								respond.put("clientID", null);
+								respond.put("Command", "UPDATE_PEERLIST");
+								
+								try {
+									respond.put("Peer_list:", PeerList.serialize(peerList));
+								} catch (IOException e) {
+									// TODO Auto-generated catch block
+									e.printStackTrace();
+								}
+								
+							}
 							break;
 						
 					}
@@ -218,7 +265,7 @@ public class ImageServer extends Peer {
 					
 					writer.println(respond.toString());
 					writer.flush();
-					//System.out.println("Server sent: " + respond.toString());
+					System.out.println("Server sent: " + respond.toString());
 				
 				}
 				
@@ -235,6 +282,10 @@ public class ImageServer extends Peer {
 	
 	
 	
+	/**
+	 * @author Matthew
+	 * GUI thread to display GUI
+	 */
 	public class GUIThread extends JPanel implements Runnable{
 		int WIDTH = 700;
 		int HEIGHT = 700;
@@ -244,7 +295,7 @@ public class ImageServer extends Peer {
 			// TODO Auto-generated method stub
 			
 			// load image to image panel
-			displayImage = ImageReader.loadDefault();
+			displayImage = ImageReader.load();
 			if(displayImage == null) {
 				System.exit(0);
 			}
@@ -254,7 +305,7 @@ public class ImageServer extends Peer {
 		
 		
 		/** 
-		 * When the source image in change, update all clients
+		 * When the source image changed, this method update all clients(peers)
 		 */
 		public void broadcastSourceImageUpdate() {
 			for(PrintWriter w: peerWriters) {
@@ -338,7 +389,7 @@ public class ImageServer extends Peer {
 				}
 			}
 			
-			
+			updateLayout();
 		}
 		
 		/**
@@ -461,7 +512,6 @@ public class ImageServer extends Peer {
 								// TODO Auto-generated catch block
 								e1.printStackTrace();
 							}
-							//checkSolution();
 						}
 						
 					}
